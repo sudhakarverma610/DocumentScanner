@@ -1,0 +1,9 @@
+.display-false{
+    display: none;
+}
+.display-true{
+    display: block;
+}
+.Fields{
+    padding-left: 10px;
+}
