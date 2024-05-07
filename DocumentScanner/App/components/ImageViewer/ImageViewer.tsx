@@ -171,8 +171,8 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
               };
               console.log('data',data)
               //tempary comment
-          //   var createdConsumerId= await  props.context.webAPI.createRecord("neu_consumerdocument",data);           
-          //  await createNote(createdConsumerId.id,createdConsumerId.entityType,documentName,mergedPDf)
+            var createdConsumerId= await  props.context.webAPI.createRecord("neu_consumerdocument",data);           
+           await createNote(createdConsumerId.id,createdConsumerId.entityType,documentName,mergedPDf)
         }
      }
       console.log('PDF creation successful!');
@@ -319,7 +319,11 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
     props.context.utils.lookupObjects(lookupOptions)
     .then((it)=>{ 
       var lookRef=it?.[0];
-      setConsumerFormValues(prevalue=> ({...prevalue,documentType:{ value:lookRef.name,id:lookRef.id}}))
+      if(lookRef)
+        setConsumerFormValues(prevalue=> ({...prevalue,documentType:{ value:lookRef.name,id:lookRef.id}}));
+      else
+        setConsumerFormValues(prevalue=> ({...prevalue,documentType:{ value:"",id:""}}));
+
     })
   } 
   return ( 

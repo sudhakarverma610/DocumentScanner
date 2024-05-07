@@ -138,8 +138,8 @@ export const App: FC<AppProps> = (props: AppProps) => {
       .replace("}", "");
     var userSettings = props.context.userSettings;
     var currentuserid = userSettings.userId.replace("{", "").replace("}", "");
-    setAbleToInitiateScanning(true);
-    return;
+    // setAbleToInitiateScanning(true);
+    // return;
     var appendToAccess = await checkAccess("contact", entityId, currentuserid);
     var xrmUtility = (window as any).Xrm;
     if (appendToAccess && xrmUtility) {
@@ -229,7 +229,10 @@ export const App: FC<AppProps> = (props: AppProps) => {
   };
   let onScanningDone=(isScanDone:boolean,err:string)=>{
     console.log('isScanDone',isScanDone);
-    setshowErrorMessage(err)
+    setshowErrorMessage(err);
+    if(err){
+      onLoadDWT();      
+    }
     setScanningDone(false);
   }
   let headerButtonClick=(types:HeaderButtonTypes)=>{
@@ -241,8 +244,6 @@ export const App: FC<AppProps> = (props: AppProps) => {
       loadImage()
     else if(types==HeaderButtonTypes.ScanningCompleted)
       onDone();
-
-
   }
   return (
     <FluentProvider theme={webLightTheme}>    
