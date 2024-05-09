@@ -33,10 +33,9 @@ export const App: FC<AppProps> = (props: AppProps) => {
   );
   let containerId = "dwtcontrolContainer";
    
-  const [showScanningView, setShowScanningView] = useState<boolean>(false);
-  const [showErrorMessage, setshowErrorMessage] = useState<string>("");
+  const [showScanningView, setShowScanningView] = useState<boolean>(false); 
   const trailKey =
-    "t01898AUAAIO9WJQmjeGhwkyBRQlx1L69IjrpptYvZtoTO2jLBZ7lFN3sezYooYkVcifiha3cQ89V8mTjf+o72E617TLqj538crKBU/WdQn2nNXDyljNlwDyMy21387ppATPwmgFt6bABVgJLLAfgHdbYzAPoAXIAeTGYB1zu4nz4xLFAyr//XOjkZAOn6jvLAqnjtAZO3nKmAukjujHtdlwKxMrM2QH0AF0Ctj5kpwLBEaAH6AQYg4QwfAEyYypy";
+    "t01888AUAAGuTHmGf2O9qgopSfxULa5hbf3NTP1CGwiLkfYUQUeBjJuPuG31v6I059Qj5tOuVifpdctnaUaRcd5WTO1EHkml/Tp7glPFOofFOTHDyLSfRcxv6vNvmNy9O4Ai8NkD247ADqIFcSwO8bakNGsAaIAogWg3QgNNV9D+fqQ1I/fXKhiYnT3DKeGcdkDFOTHDyLWcIyOLJrGG1aw4I6pNzAFgD5BRAuci6gFALsAZIB8DCijfyBXHcKoU=";
 
   let Dynamsoft_OnReady = () => {
     setDWObject(Dynamsoft.DWT.GetWebTwain(containerId));
@@ -228,16 +227,23 @@ export const App: FC<AppProps> = (props: AppProps) => {
     }
   };
   let onScanningDone=(isScanDone:boolean,err:string)=>{
-    console.log('isScanDone',isScanDone);
-    setshowErrorMessage(err);
-    if(err){
-      onLoadDWT();      
-    }
+    console.log('isScanDone',isScanDone); 
     setScanningDone(false);
+    if(err){
+      var alertStrings = { confirmButtonLabel: "ok", text: err, title: "Alert" };
+      var alertOptions = { height: 120, width: 260 };
+      props.context.navigation.openAlertDialog(alertStrings, alertOptions).then( function (success) {
+        console.log("Alert dialog closed");
+        location.reload()
+    },
+    function (error) {
+        console.log(error.message);
+    })
+    }
+   
   }
   let headerButtonClick=(types:HeaderButtonTypes)=>{
-    console.log('types',types);
-    setshowErrorMessage("")
+    console.log('types',types); 
     if(types==HeaderButtonTypes.InitiateScanning)
       acquireImage();
     else if(types==HeaderButtonTypes.loadDiskDocument)
@@ -253,14 +259,7 @@ export const App: FC<AppProps> = (props: AppProps) => {
       scanningViewExist={showScanningView}
       ></Header> 
     } 
-     <div id={containerId} className={"display-" + showScanningView}></div>    
-        {   showErrorMessage&&          
-           <MessageBar intent={"success"}>
-           <MessageBarBody>
-             <MessageBarTitle> {showErrorMessage}</MessageBarTitle>              
-           </MessageBarBody>
-         </MessageBar>
-        }  
+     <div id={containerId} className={"display-" + showScanningView}></div>
       {scanningDone && (
         <ImageViewer DWObject={DWObject} context={props.context} onScanningDone={onScanningDone}></ImageViewer>
       )}

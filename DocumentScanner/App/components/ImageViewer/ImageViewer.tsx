@@ -90,13 +90,16 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
     let isFormValid=formValidate(consumerFormValues);   
      if(!isFormValid)
      {  
-      let nextPage=currentPage + 1;          
+      let nextPage=currentPage + 1;  
+      let lastObj=counsumerDocuments.length>0? counsumerDocuments[counsumerDocuments.length-1]:null;
+      
       setConsumerFormValues(x=>  ({...defaultFormValues, pageNo:nextPage,
         consumer:x.consumer,
         startNewDocument:x.startNewDocument,
-        documentName:x.carryDtToSqntPage?x.documentName:{value:""},
-        documentDesc:x.carryDtToSqntPage?x.documentDesc:{value:""},
-      documentType:(x.carryDtToSqntPage?x.documentType:{
+        carryDtToSqntPage:x.carryDtToSqntPage,
+        documentName:x.documentName,
+        documentDesc:x.documentDesc,
+        documentType:(lastObj?.carryDtToSqntPage.value?x.documentType:{
         value:""
       })}));
       console.log(consumerFormValues,' var documents=Array.from(counsumerDocuments);')
@@ -153,18 +156,16 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
         if(group.items.length>0){
           var mergedPDf=await mergeDocuments(group.items);
           let fItem=group.items[0];
-          let documentName=group.documentCount+".pdf";
-          if(fItem.documentName.value)
-            documentName=fItem.documentName.value;
-          documentName=documentName.trim();
-          if(!documentName.toLowerCase().includes(".pdf"))
-            documentName +=".pdf";
+          let documentName="";
+          var documentNameValue=fItem.documentName.value?.trim();
+          if(documentNameValue)
+            documentName=documentNameValue;            
           var data =
               {
                   "neu_Consumer@odata.bind": "/contacts("+fItem.consumer.id+")",
                   "neu_DocumentType@odata.bind": "/neu_documenttypes("+fItem.documentType.id?.replace('}','').replace('{','')+")",
                   "neu_name": documentName,
-                  "neu_description": fItem.documentDesc.value.trim(),
+                  "neu_description": fItem.documentDesc.value?.trim(),
                   "neu_documentsource": 288500002,
                   "neu_numberofpages": group.items.length,
                   "neu_uploaddate": new Date()
@@ -172,7 +173,7 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
               console.log('data',data)
               //tempary comment
             var createdConsumerId= await  props.context.webAPI.createRecord("neu_consumerdocument",data);           
-           await createNote(createdConsumerId.id,createdConsumerId.entityType,documentName,mergedPDf)
+           await createNote(createdConsumerId.id,createdConsumerId.entityType,documentName+".pdf",mergedPDf)
         }
      }
       console.log('PDF creation successful!');
@@ -237,9 +238,7 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
       binary += String.fromCharCode(bytes[i]);
     }
     return window.btoa(binary);
-  };
-
- 
+  }; 
   const onClickOnPrevious = () => {
     let previousPage=currentPage - 1;
     setCurrentPage(previousPage);
@@ -249,9 +248,20 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
   };
   const formChange = (name: string, value?: any) => {
     var values={...consumerFormValues}
-    if(name=="carryDtToSqntPage"&&!value&&values.startNewDocument.value){
-      values.documentType.value="";
-    }    
+ 
+    if(name=="startNewDocument"&&!value&&counsumerDocuments.length>0) {
+      var lastObj=counsumerDocuments[counsumerDocuments.length-1];
+      setConsumerFormValues((values) => ({
+        ...values,
+        [name]: {
+          value: value,
+        },
+        documentType:lastObj.documentType,
+        documentName:lastObj.documentName,
+        documentDesc:lastObj.documentDesc
+      }));
+      return;
+    }
     setConsumerFormValues((values) => ({
       ...values,
       [name]: {
@@ -413,6 +423,7 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
                   formChange("documentDesc", ev.target.value)
                 }
                 disabled={!consumerFormValues.startNewDocument.value}
+                maxLength={8000}
               />
             </Field>
             <br />
