@@ -178,7 +178,7 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
      }
       console.log('PDF creation successful!');
       SetscanningDone(true);
-      props.onScanningDone(true,"Document scanned successfully.");
+      props.onScanningDone(true,"Document(s) scanned successfully.");
     } catch (error) {      
       console.error('Error merging PNGs to PDF:', error);
       console.log('Error merging PNGs to PDF');
@@ -247,8 +247,7 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
       setConsumerFormValues({...previousDocument})
   };
   const formChange = (name: string, value?: any) => {
-    var values={...consumerFormValues}
- 
+    var values={...consumerFormValues} 
     if(name=="startNewDocument"&&!value&&counsumerDocuments.length>0) {
       var lastObj=counsumerDocuments[counsumerDocuments.length-1];
       setConsumerFormValues((values) => ({
@@ -256,12 +255,37 @@ export const ImageViewer = (props: { DWObject: WebTwain,context: ComponentFramew
         [name]: {
           value: value,
         },
-        documentType:lastObj.documentType,
-        documentName:lastObj.documentName,
-        documentDesc:lastObj.documentDesc
+        documentType:lastObj?.documentType,
+        documentName:lastObj?.documentName,
+        documentDesc:lastObj?.documentDesc
       }));
       return;
-    }
+    }else if(name=="carryDtToSqntPage"&&values.startNewDocument.value&&counsumerDocuments.length>0){
+      var lastObjDocument=counsumerDocuments[counsumerDocuments.length-1];
+      if(value){
+        setConsumerFormValues((values) => ({
+          ...values,
+          [name]: {
+            value: value,
+          },
+          documentType:lastObjDocument.documentType, 
+        }));
+      }else{
+        setConsumerFormValues((values) => ({
+          ...values,
+          [name]: {
+            value: value,
+          },
+          documentType:{
+            value:"",
+            id:""
+          }, 
+        }));
+      }
+     
+      return;
+    } 
+    
     setConsumerFormValues((values) => ({
       ...values,
       [name]: {

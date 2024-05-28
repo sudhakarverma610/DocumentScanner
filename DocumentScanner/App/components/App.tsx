@@ -28,6 +28,8 @@ export interface AppProps {
 export const App: FC<AppProps> = (props: AppProps) => {
   const [DWObject, setDWObject] = useState<any>(null);
   const [scanningDone, setScanningDone] = useState<boolean>(false);
+  const [isIRCDocumentRole, setisIRCDocumentRole] = useState<boolean>(false);
+
   const [ableToInitiateScanning, setAbleToInitiateScanning] = useState<boolean>(
     false
   );
@@ -88,8 +90,19 @@ export const App: FC<AppProps> = (props: AppProps) => {
     }
   };
   useEffect(() => {
-    onLoadDWT();
-    isIntialButton();
+    var xrmUtility = (window as any).Xrm;
+   let isIrc= xrmUtility.Utility.getGlobalContext()
+    .userSettings.roles.getAll()
+    .filter(
+      (r: any) =>
+        r.name.toLowerCase() == "IRC ADD Document Scanning".toLowerCase()       
+    ).length > 0;
+    if(isIrc){
+      setisIRCDocumentRole(isIrc)
+      onLoadDWT();
+      isIntialButton();
+    }
+ 
   }, []);
   let loadImage = () => {
     let OnSuccess = () => {
@@ -253,7 +266,9 @@ export const App: FC<AppProps> = (props: AppProps) => {
   }
   return (
     <FluentProvider theme={webLightTheme}>    
-    {!scanningDone&&
+   {isIRCDocumentRole&&
+   <>   
+   {!scanningDone&&
       <Header onButtonClick={headerButtonClick} disabled={!ableToInitiateScanning}
       showDisk={props.context.parameters.isDocumentLoadFromLocal.raw}    
       scanningViewExist={showScanningView}
@@ -263,6 +278,9 @@ export const App: FC<AppProps> = (props: AppProps) => {
       {scanningDone && (
         <ImageViewer DWObject={DWObject} context={props.context} onScanningDone={onScanningDone}></ImageViewer>
       )}
+   </>
+   } 
+    
     </FluentProvider>
   );
 };
