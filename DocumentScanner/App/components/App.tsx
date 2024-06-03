@@ -4,18 +4,9 @@ import * as React from "react";
 import Dynamsoft from "dwt";
 import { ImageViewer } from "./ImageViewer/ImageViewer";
 import {
-  Button,
   FluentProvider,
-  MessageBar,
-  MessageBarBody,
-  MessageBarTitle,
   webLightTheme,
 } from "@fluentui/react-components";
-import {
-  CheckboxChecked16Regular,
-  DocumentBorderPrint20Regular,
-  DocumentArrowUp20Regular,
-} from "@fluentui/react-icons";
 import "./App.css";
 import { Header } from "./Header";
 import { HeaderButtonTypes } from "../../models/IconsumerForm";
@@ -30,14 +21,11 @@ export const App: FC<AppProps> = (props: AppProps) => {
   const [scanningDone, setScanningDone] = useState<boolean>(false);
   const [isIRCDocumentRole, setisIRCDocumentRole] = useState<boolean>(false);
 
-  const [ableToInitiateScanning, setAbleToInitiateScanning] = useState<boolean>(
-    false
-  );
+  const [ableToInitiateScanning,setAbleToInitiateScanning] = useState<boolean>(false);
   let containerId = "dwtcontrolContainer";
    
-  const [showScanningView, setShowScanningView] = useState<boolean>(false); 
-  const trailKey =
-    "t01888AUAAGuTHmGf2O9qgopSfxULa5hbf3NTP1CGwiLkfYUQUeBjJuPuG31v6I059Qj5tOuVifpdctnaUaRcd5WTO1EHkml/Tp7glPFOofFOTHDyLSfRcxv6vNvmNy9O4Ai8NkD247ADqIFcSwO8bakNGsAaIAogWg3QgNNV9D+fqQ1I/fXKhiYnT3DKeGcdkDFOTHDyLWcIyOLJrGG1aw4I6pNzAFgD5BRAuci6gFALsAZIB8DCijfyBXHcKoU=";
+  const [showScanningView,setShowScanningView] = useState<boolean>(false); 
+  const trailKey ="t01898AUAAA4GblJaLfqkXtliFWl4+SRHNVmiL75HgUYv52cmO1kVRLoTUKwDNsFbJBZmzSKnCU9lHP6D/n8cgEwlwpI3UDGPf042cGp9p0p9Jxo4ecsp8pyGw7zb3TQvT2ACXhOg63FYAZTAXMsOeNtSGzyAHqAOoF4N8IDTVRx/PmUfkPLrlQ3NTjZwan1nGZA6TjRw8pYzBiQM0o1xteMcEJQnZwPQA/QUwHKRHQIie4AeoAcAwQKE/AERfi88";
 
   let Dynamsoft_OnReady = () => {
     setDWObject(Dynamsoft.DWT.GetWebTwain(containerId));
@@ -90,8 +78,12 @@ export const App: FC<AppProps> = (props: AppProps) => {
     }
   };
   useEffect(() => {
+    // setisIRCDocumentRole(true)
+    // onLoadDWT();
+    // isIntialButton();
+    // return;
     var xrmUtility = (window as any).Xrm;
-   let isIrc= xrmUtility.Utility.getGlobalContext()
+    let isIrc= xrmUtility.Utility.getGlobalContext()
     .userSettings.roles.getAll()
     .filter(
       (r: any) =>
