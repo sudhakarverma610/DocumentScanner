@@ -207,6 +207,19 @@ export const ImageViewer = (props: {
       }
       console.log("value", items);
       setcounsumerDocuments(items);
+      if(items.length>(nextPage-1))
+        {
+         var currentPageInfo= items[nextPage-1];
+         if(currentPageInfo!=null){
+          var imageData: string = (await getImage(nextPage)) as any;
+           
+          setConsumerFormValues((x) => ({
+            ...currentPageInfo,
+            pageNo:nextPage ,
+            image:imageData              
+          }));
+         }       
+        }
       setCurrentPage(nextPage);
     }
   };
@@ -214,8 +227,7 @@ export const ImageViewer = (props: {
     if (
       counsumerDocuments.length ==
       props.DWObject.GetDocumentInfoList()?.[0].imageIds.length
-    ) {
-      console.log("counsumerDocuments", counsumerDocuments);
+    ) { 
       mergeToPDF();
     }
   }, [counsumerDocuments]);
