@@ -103,20 +103,30 @@ export const ImageViewer = (props: {
         counsumerDocuments.length > 0
           ? counsumerDocuments[counsumerDocuments.length - 1]
           : null;
-      setConsumerFormValues((x) => ({
-        ...defaultFormValues,
-        pageNo: nextPage,
-        consumer: x.consumer,
-        startNewDocument: x.startNewDocument,
-        carryDtToSqntPage: x.carryDtToSqntPage,
-        documentName: x.documentName,
-        documentDesc: x.documentDesc,
-        documentType: lastObj?.carryDtToSqntPage.value
-          ? x.documentType
-          : {
-              value: "",
-            },
-      }));
+      let isPageValueAlreadyExist=counsumerDocuments.find(it=>it.pageNo==nextPage);
+      if(!isPageValueAlreadyExist){
+        setConsumerFormValues((x) => ({
+          ...defaultFormValues,
+          pageNo: nextPage,
+          consumer: x.consumer,
+          startNewDocument: x.startNewDocument,
+          carryDtToSqntPage: x.carryDtToSqntPage,
+          documentName: x.documentName,
+          documentDesc: x.documentDesc,
+          documentType: lastObj?.carryDtToSqntPage.value
+            ? x.documentType
+            : {
+                value: "",
+              },
+        }));
+      }else{
+        setConsumerFormValues((x) => ({
+          ...x,
+          ...isPageValueAlreadyExist
+          // pageNo: nextPage           
+        }));
+      }
+     
       console.log(
         consumerFormValues,
         " var documents=Array.from(counsumerDocuments);"
@@ -211,12 +221,12 @@ export const ImageViewer = (props: {
         {
          var currentPageInfo= items[nextPage-1];
          if(currentPageInfo!=null){
-          var imageData: string = (await getImage(nextPage)) as any;
+          var imageData1: string = (await getImage(nextPage)) as any;
            
           setConsumerFormValues((x) => ({
             ...currentPageInfo,
             pageNo:nextPage ,
-            image:imageData              
+            image:imageData1              
           }));
          }       
         }

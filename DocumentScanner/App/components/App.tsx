@@ -78,10 +78,10 @@ export const App: FC<AppProps> = (props: AppProps) => {
     }
   };
   useEffect(() => {
-    // setisIRCDocumentRole(true)
-    // onLoadDWT();
-    // isIntialButton();
-    // return;
+    setisIRCDocumentRole(true)
+    onLoadDWT();
+    isIntialButton();
+    return;
     var xrmUtility = (window as any).Xrm;
     let isIrc= xrmUtility.Utility.getGlobalContext()
     .userSettings.roles.getAll()
@@ -142,8 +142,8 @@ export const App: FC<AppProps> = (props: AppProps) => {
       .replace("}", "");
     var userSettings = props.context.userSettings;
     var currentuserid = userSettings.userId.replace("{", "").replace("}", "");
-    // setAbleToInitiateScanning(true);
-    // return;
+    setAbleToInitiateScanning(true);
+    return;
     var appendToAccess = await checkAccess("contact", entityId, currentuserid);
     var xrmUtility = (window as any).Xrm;
     if (appendToAccess && xrmUtility) {

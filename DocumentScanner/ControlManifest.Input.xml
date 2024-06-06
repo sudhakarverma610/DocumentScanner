@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="neu" constructor="DocumentScanner" version="1.1.1" display-name-key="DocumentScanner" description-key="DocumentScanner description" control-type="standard" >
+  <control namespace="neu" constructor="DocumentScanner" version="1.2.0" display-name-key="DocumentScanner" description-key="DocumentScanner description" control-type="standard" >
    
     <external-service-usage enabled="false">
    

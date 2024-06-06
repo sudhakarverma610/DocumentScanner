@@ -35,7 +35,7 @@ export const Header = (props: {
           icon={<DocumentArrowUp20Regular />}
           disabled={props.disabled}
         >
-          load Disk Document
+          Load Disk Document
         </Button>
       )}
       {props.scanningViewExist && (
