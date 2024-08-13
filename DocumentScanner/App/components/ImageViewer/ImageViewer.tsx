@@ -1,4 +1,4 @@
-import * as React from "react";
+import  * as React from "react";
 import {
   ArrowNext16Regular,
   ArrowPrevious16Regular,
@@ -14,24 +14,23 @@ import {
   CardPreview,
   Button,
   ButtonProps,
-  MessageBar,
-  MessageBarBody,
-  MessageBarTitle,
 } from "@fluentui/react-components";
 import { WebTwain } from "dwt/dist/types/WebTwain";
 import { useEffect, useState } from "react";
 import Dynamsoft from "dwt";
-import { PDFDocument } from "pdf-lib";
-
+ 
 import { consumerForm } from "../../../models/IconsumerForm";
 
 import { IInputs } from "../../../generated/ManifestTypes";
+import { PDFDocument } from "pdf-lib";
+import imageCompression from "browser-image-compression";
+
 const defaultFormValues = {
   carryDtToSqntPage: {
     value: true,
   },
   startNewDocument: {
-    value: true,
+    value: false,
   },
   consumer: {
     value: "",
@@ -63,6 +62,7 @@ export const ImageViewer = (props: {
   onScanningDone: (isScanDone: boolean, err: string) => void;
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(0);
+  const [formSubmitted, setformSubmitted] = useState<boolean>(false);
   const [currentImage, setCurrentImage] = useState<string>("");
   const [consumerFormValues, setConsumerFormValues] = useState<consumerForm>({
     ...defaultFormValues,
@@ -72,10 +72,11 @@ export const ImageViewer = (props: {
     consumerFormValues,
   ]);
   const [scanningDone, SetscanningDone] = useState(false);
+  
   useEffect(() => {
     setConsumerFormValues((values) => ({
       ...values,
-      startNewDocument: { value: currentPage == 0 },
+      startNewDocument: { value: currentPage == 0?true:values.startNewDocument.value },
       consumer: {
         value: props.context.parameters.primaryField.raw,
         id: (props.context as any).page.entityId,
@@ -94,7 +95,7 @@ export const ImageViewer = (props: {
       }
     );
   }, [currentPage]);
-
+ 
   const onClickOnNext = () => {
     let isFormValid = formValidate(consumerFormValues);
     if (!isFormValid) {
@@ -109,7 +110,7 @@ export const ImageViewer = (props: {
           ...defaultFormValues,
           pageNo: nextPage,
           consumer: x.consumer,
-          startNewDocument: x.startNewDocument,
+          // startNewDocument: x.startNewDocument,
           carryDtToSqntPage: x.carryDtToSqntPage,
           documentName: x.documentName,
           documentDesc: x.documentDesc,
@@ -138,28 +139,72 @@ export const ImageViewer = (props: {
   const onClickOnGoToLast = async () => {
     let isFormValid = formValidate(consumerFormValues);
     if (!isFormValid) {
-      //let totalItems=props.DWObject.HowManyImagesInBuffer;
-      let lastObj1 =
+       let lastObj1 =
         counsumerDocuments.length > 0
           ? counsumerDocuments[counsumerDocuments.length - 1]
           : null;
-      setConsumerFormValues((x) => ({
-        ...defaultFormValues,
-        pageNo: currentPage,
-        consumer: x.consumer,
-        startNewDocument: x.startNewDocument,
-        carryDtToSqntPage: x.carryDtToSqntPage,
-        documentName: x.documentName,
-        documentDesc: x.documentDesc,
-        documentType: lastObj1?.carryDtToSqntPage.value
-          ? x.documentType
-          : {
-              value: "",
-            },
-      }));
+      
+      let isPageValueAlreadyExist=counsumerDocuments.find(it=>it.pageNo==currentPage);
+      if(!isPageValueAlreadyExist){
+        setConsumerFormValues((x) => ({
+          ...defaultFormValues,
+          pageNo: currentPage,
+          consumer: x.consumer,
+          startNewDocument: x.startNewDocument,
+          carryDtToSqntPage: x.carryDtToSqntPage,
+          documentName: x.documentName,
+          documentDesc: x.documentDesc,
+          documentType: lastObj1?.carryDtToSqntPage.value
+            ? x.documentType
+            : {
+                value: "",
+              },
+        }));
+      }else{
+        setConsumerFormValues((x) => ({
+          ...x,
+          ...isPageValueAlreadyExist
+          // pageNo: nextPage           
+        }));
+      }
       upsertDocument(consumerFormValues, true);
     }
   };
+  const  base64StringToFile=(base64String:string, filename:string) =>{
+    // Extract MIME type from base64 string
+    //data:image/png;base64,
+    const mimeType = "image/png";
+  
+    // Convert base64 to binary
+    const byteCharacters = atob(base64String);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+  
+    // Create Blob
+    const blob = new Blob([byteArray], { type: mimeType });
+  
+    // Create File
+    const file = new File([blob], filename, { type: mimeType });
+    
+    return file;
+  }
+  const blobToBase64=(blob:Blob) =>{
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = (reader?.result as string).split(',')?.[1];
+        resolve(base64String);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
+  
   const getImage = (currentPage: number) => {
     return new Promise(function (resolve, reject) {
       // getUserData(userId, resolve, reject);
@@ -168,7 +213,30 @@ export const ImageViewer = (props: {
         Dynamsoft.DWT.EnumDWT_ImageType.IT_PNG,
         function (result, indices, type) {
           let data = result.getData(0, result.getLength());
-          resolve(data);
+          let maxSizeKB=300;
+         if(props.context.parameters.maxSizeToOptimiseInKb.raw)
+          maxSizeKB=props.context.parameters.maxSizeToOptimiseInKb.raw;
+          const options = {
+            maxSizeMB:0,
+            maxSizeKB: 300,
+            maxWidthOrHeight: 1000,
+            useWebWorker: true,
+          }
+          options.maxSizeMB = options.maxSizeKB / 1024;
+
+          const compressedFile =  imageCompression(base64StringToFile(data,"temp.png"), options).then((it=>{
+            blobToBase64(it).then(database=>{              
+              console.log('data  '+(((data.length*6)/8)/1024)+'  kb==>'+ (it.size/1024)+"kb")
+
+              resolve(database);
+            },err=>{
+              reject(err)
+            });           
+          }),er=>{
+            reject(er)
+          });
+
+          
         },
         function (errorCode, errorString) {
           console.log(errorString);
@@ -196,23 +264,28 @@ export const ImageViewer = (props: {
       while (nextPage < totalItems - 1) {
         let lastObj =
           documents.length > 0 ? documents[documents.length - 1] : null;
-        let nextItem = {
-          ...defaultFormValues,
-          pageNo: nextPage,
-          consumer: consumerFormValues.consumer,
-          startNewDocument: { value: false },
-          carryDtToSqntPage: consumerFormValues.carryDtToSqntPage,
-          documentName: consumerFormValues.documentName,
-          documentDesc: consumerFormValues.documentDesc,
-          documentType: lastObj?.carryDtToSqntPage.value
-            ? consumerFormValues.documentType
-            : {
-                value: "",
-              },
-        };
-        var imageData: string = (await getImage(nextPage)) as any;
-        nextItem.image = imageData;
-        items.push(nextItem);
+        let isPageValueAlreadyExist=items.find(it=>it.pageNo==nextPage);
+        if(!isPageValueAlreadyExist){
+          let nextItem = {
+            ...defaultFormValues,
+            pageNo: nextPage,
+            consumer: consumerFormValues.consumer,
+            startNewDocument: { value: false },
+            carryDtToSqntPage: consumerFormValues.carryDtToSqntPage,
+            documentName: consumerFormValues.documentName,
+            documentDesc: consumerFormValues.documentDesc,
+            documentType: lastObj?.carryDtToSqntPage.value
+              ? consumerFormValues.documentType
+              : {
+                  value: "",
+                },
+          };        
+          items.push(nextItem);
+        }else{           
+          isPageValueAlreadyExist.pageNo=nextPage;      
+          
+        }
+       
         nextPage++;
       }
       console.log("value", items);
@@ -221,20 +294,17 @@ export const ImageViewer = (props: {
         {
          var currentPageInfo= items[nextPage-1];
          if(currentPageInfo!=null){
-          var imageData1: string = (await getImage(nextPage)) as any;
-           
-          setConsumerFormValues((x) => ({
+           setConsumerFormValues((x) => ({
             ...currentPageInfo,
-            pageNo:nextPage ,
-            image:imageData1              
-          }));
+            pageNo:nextPage,
+           }));
          }       
         }
       setCurrentPage(nextPage);
     }
   };
   useEffect(() => {
-    if (
+    if (formSubmitted&&
       counsumerDocuments.length ==
       props.DWObject.GetDocumentInfoList()?.[0].imageIds.length
     ) { 
@@ -279,36 +349,39 @@ export const ImageViewer = (props: {
       if (xrm) xrm.Utility.showProgressIndicator("Processing....");
       for (let i = 0; i < groupDocuments.length; i++) {
         const group = groupDocuments[i];
-        if (group.items.length > 0) {
-          var mergedPDf = await mergeDocuments(group.items);
-          let fItem = group.items[0];
-          let documentName = "";
-          var documentNameValue = fItem.documentName.value?.trim();
-          if (documentNameValue) documentName = documentNameValue;
-          var data = {
-            "neu_Consumer@odata.bind": "/contacts(" + fItem.consumer.id + ")",
-            "neu_DocumentType@odata.bind":
-              "/neu_documenttypes(" +
-              fItem.documentType.id?.replace("}", "").replace("{", "") +
-              ")",
-            neu_name: documentName,
-            neu_description: fItem.documentDesc.value?.trim(),
-            neu_documentsource: 288500002,
-            neu_numberofpages: group.items.length,
-            neu_uploaddate: new Date(),
-          };
-          console.log("data", data);
-          //tempary comment
-          var createdConsumerId = await props.context.webAPI.createRecord(
-            "neu_consumerdocument",
-            data
-          );
-          await createNote(
-            createdConsumerId.id,
-            createdConsumerId.entityType,
-            documentName + ".pdf",
-            mergedPDf
-          );
+        if (group.items.length > 0) {   
+          var mergedPDf = await mergeDocumentsByJSPDF(group.items);
+          if(mergedPDf){
+            let fItem = group.items[0];
+            let documentName = "";
+            var documentNameValue = fItem.documentName.value?.trim();
+            if (documentNameValue) documentName = documentNameValue;
+            var data = {
+              "neu_Consumer@odata.bind": "/contacts(" + fItem.consumer.id + ")",
+              "neu_DocumentType@odata.bind":
+                "/neu_documenttypes(" +
+                fItem.documentType.id?.replace("}", "").replace("{", "") +
+                ")",
+              neu_name: documentName,
+              neu_description: fItem.documentDesc.value?.trim(),
+              neu_documentsource: 288500002,
+              neu_numberofpages: group.items.length,
+              neu_uploaddate: new Date(),
+            };
+            console.log("data", data);
+            //tempary comment
+            var createdConsumerId = await props.context.webAPI.createRecord(
+              "neu_consumerdocument",
+              data
+            );
+            await createNote(
+              createdConsumerId.id,
+              createdConsumerId.entityType,
+              documentName + ".pdf",
+              mergedPDf
+            );
+          }
+         
         }
       }
       console.log("PDF creation successful!");
@@ -338,17 +411,24 @@ export const ImageViewer = (props: {
     var result = await props.context.webAPI.createRecord("annotation", note);
     return result.id;
   };
-  const mergeDocuments = async (counsumerDocuments: consumerForm[]) => {
+   
+  const mergeDocumentsByJSPDF = async (counsumerDocuments: consumerForm[]) => {
     const pdfDoc = await PDFDocument.create();
+    props.DWObject.IfShowProgressBar=(false);
+   
+  try{
     for (let i = 0; i < counsumerDocuments.length; i++) {
-      const pngBase64 = counsumerDocuments[i].image;
+      var imageData: string = (await getImage(counsumerDocuments[i].pageNo)) as any;      
+       const pngBase64 = imageData;
+      // const pngBase64 = counsumerDocuments[i].image;      
       if (pngBase64) {
         const pngArrayBuffer = Uint8Array.from(atob(pngBase64), (c) =>
           c.charCodeAt(0)
         );
 
+ 
         const pngImage = await pdfDoc.embedPng(pngArrayBuffer);
-        const pngDims = pngImage.scale(0.5);
+        const pngDims = pngImage.scale(0.8);
         const page = pdfDoc.addPage();
 
         const aspectRatio = pngDims.width / pngDims.height;
@@ -367,11 +447,18 @@ export const ImageViewer = (props: {
           height: imageHeight,
         });
       }
-    }
+    } 
+    props.DWObject.IfShowProgressBar=(true);
+    
     const pdfBytes = await pdfDoc.save();
     const pdfBase64 = arrayBufferToBase64(pdfBytes);
     return pdfBase64;
+  }catch(e){
+   console.log('error',e);
+  }
+   
   };
+ 
   const arrayBufferToBase64 = (buffer: any) => {
     let binary = "";
     const bytes = new Uint8Array(buffer);
@@ -441,7 +528,8 @@ export const ImageViewer = (props: {
     }));
   };
   const onSubmit = () => {
-    let isFormValid = formValidate(consumerFormValues);
+    setformSubmitted(true);
+    let isFormValid = formValidate(consumerFormValues);    
     if (!isFormValid) {
       upsertDocument(consumerFormValues);
     }

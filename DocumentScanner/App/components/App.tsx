@@ -3,13 +3,11 @@ import { IInputs } from "../../generated/ManifestTypes";
 import * as React from "react";
 import Dynamsoft from "dwt";
 import { ImageViewer } from "./ImageViewer/ImageViewer";
-import {
-  FluentProvider,
-  webLightTheme,
-} from "@fluentui/react-components";
+import { FluentProvider, webLightTheme } from "@fluentui/react-components";
 import "./App.css";
 import { Header } from "./Header";
 import { HeaderButtonTypes } from "../../models/IconsumerForm";
+import { Config, Environment } from "../../../config";
 
 export interface AppProps {
   context: ComponentFramework.Context<IInputs>;
@@ -21,12 +19,13 @@ export const App: FC<AppProps> = (props: AppProps) => {
   const [scanningDone, setScanningDone] = useState<boolean>(false);
   const [isIRCDocumentRole, setisIRCDocumentRole] = useState<boolean>(false);
 
-  const [ableToInitiateScanning,setAbleToInitiateScanning] = useState<boolean>(false);
+  const [ableToInitiateScanning, setAbleToInitiateScanning] = useState<boolean>(
+    false
+  );
   let containerId = "dwtcontrolContainer";
-   
-  const [showScanningView,setShowScanningView] = useState<boolean>(false); 
-  const trailKey ="t01898AUAAA4GblJaLfqkXtliFWl4+SRHNVmiL75HgUYv52cmO1kVRLoTUKwDNsFbJBZmzSKnCU9lHP6D/n8cgEwlwpI3UDGPf042cGp9p0p9Jxo4ecsp8pyGw7zb3TQvT2ACXhOg63FYAZTAXMsOeNtSGzyAHqAOoF4N8IDTVRx/PmUfkPLrlQ3NTjZwan1nGZA6TjRw8pYzBiQM0o1xteMcEJQnZwPQA/QUwHKRHQIie4AeoAcAwQKE/AERfi88";
 
+  const [showScanningView, setShowScanningView] = useState<boolean>(false);
+  const trailKey =Config.Dynamsoft_ProductKey;
   let Dynamsoft_OnReady = () => {
     setDWObject(Dynamsoft.DWT.GetWebTwain(containerId));
   };
@@ -47,7 +46,7 @@ export const App: FC<AppProps> = (props: AppProps) => {
 
     //
     Dynamsoft.DWT.ProductKey = await getConfig("Dynamsoft.DWT.ProductKey");
-    Dynamsoft.DWT.ResourcesPath = "https://unpkg.com/dwt@18.4.2/dist"; //"WebResources/neu_/lib";
+    Dynamsoft.DWT.ResourcesPath = "https://unpkg.com/dwt@18.5.0/dist"; //"WebResources/neu_/lib";
     Dynamsoft.DWT.Containers = [
       {
         WebTwainId: "dwtObject",
@@ -73,28 +72,31 @@ export const App: FC<AppProps> = (props: AppProps) => {
           console.log("scanning done", x);
           if (x) {
             setShowScanningView(true);
-           }
+          }
         });
     }
   };
   useEffect(() => {
-    setisIRCDocumentRole(true)
-    onLoadDWT();
-    isIntialButton();
-    return;
+    if (Config.Environment == Environment.Local) {
+      setisIRCDocumentRole(true);
+      onLoadDWT();
+      isIntialButton();
+      return;
+    }
+
     var xrmUtility = (window as any).Xrm;
-    let isIrc= xrmUtility.Utility.getGlobalContext()
-    .userSettings.roles.getAll()
-    .filter(
-      (r: any) =>
-        r.name.toLowerCase() == "IRC ADD Document Scanning".toLowerCase()       
-    ).length > 0;
-    if(isIrc){
-      setisIRCDocumentRole(isIrc)
+    let isIrc =
+      xrmUtility.Utility.getGlobalContext()
+        .userSettings.roles.getAll()
+        .filter(
+          (r: any) =>
+            r.name.toLowerCase() == "IRC ADD Document Scanning".toLowerCase()
+        ).length > 0;
+    if (isIrc) {
+      setisIRCDocumentRole(isIrc);
       onLoadDWT();
       isIntialButton();
     }
- 
   }, []);
   let loadImage = () => {
     let OnSuccess = () => {
@@ -142,8 +144,10 @@ export const App: FC<AppProps> = (props: AppProps) => {
       .replace("}", "");
     var userSettings = props.context.userSettings;
     var currentuserid = userSettings.userId.replace("{", "").replace("}", "");
-    setAbleToInitiateScanning(true);
-    return;
+    if (Config.Environment == Environment.Local) {
+      setAbleToInitiateScanning(true);
+      return;
+    }
     var appendToAccess = await checkAccess("contact", entityId, currentuserid);
     var xrmUtility = (window as any).Xrm;
     if (appendToAccess && xrmUtility) {
@@ -231,48 +235,55 @@ export const App: FC<AppProps> = (props: AppProps) => {
       }
     }
   };
-  let onScanningDone=(isScanDone:boolean,err:string)=>{
-    console.log('isScanDone',isScanDone); 
+  let onScanningDone = (isScanDone: boolean, err: string) => {
+    console.log("isScanDone", isScanDone);
     setScanningDone(false);
-    if(err){
-      var alertStrings = { confirmButtonLabel: "ok", text: err, title: "Alert" };
+    if (err) {
+      var alertStrings = {
+        confirmButtonLabel: "ok",
+        text: err,
+        title: "Alert",
+      };
       var alertOptions = { height: 120, width: 260 };
-      props.context.navigation.openAlertDialog(alertStrings, alertOptions).then( function (success) {
-        console.log("Alert dialog closed");
-        location.reload()
-    },
-    function (error) {
-        console.log(error.message);
-    })
+      props.context.navigation.openAlertDialog(alertStrings, alertOptions).then(
+        function (success) {
+          console.log("Alert dialog closed");
+          location.reload();
+        },
+        function (error) {
+          console.log(error.message);
+        }
+      );
     }
-   
-  }
-  let headerButtonClick=(types:HeaderButtonTypes)=>{
-    console.log('types',types); 
-    if(types==HeaderButtonTypes.InitiateScanning)
-      acquireImage();
-    else if(types==HeaderButtonTypes.loadDiskDocument)
-      loadImage()
-    else if(types==HeaderButtonTypes.ScanningCompleted)
-      onDone();
-  }
+  };
+  let headerButtonClick = (types: HeaderButtonTypes) => {
+    console.log("types", types);
+    if (types == HeaderButtonTypes.InitiateScanning) acquireImage();
+    else if (types == HeaderButtonTypes.loadDiskDocument) loadImage();
+    else if (types == HeaderButtonTypes.ScanningCompleted) onDone();
+  };
   return (
-    <FluentProvider theme={webLightTheme}>    
-   {isIRCDocumentRole&&
-   <>   
-   {!scanningDone&&
-      <Header onButtonClick={headerButtonClick} disabled={!ableToInitiateScanning}
-      showDisk={props.context.parameters.isDocumentLoadFromLocal.raw}    
-      scanningViewExist={showScanningView}
-      ></Header> 
-    } 
-     <div id={containerId} className={"display-" + showScanningView}></div>
-      {scanningDone && (
-        <ImageViewer DWObject={DWObject} context={props.context} onScanningDone={onScanningDone}></ImageViewer>
+    <FluentProvider theme={webLightTheme}>
+      {isIRCDocumentRole && (
+        <>
+          {!scanningDone && (
+            <Header
+              onButtonClick={headerButtonClick}
+              disabled={!ableToInitiateScanning}
+              showDisk={props.context.parameters.isDocumentLoadFromLocal.raw}
+              scanningViewExist={showScanningView}
+            ></Header>
+          )}
+          <div id={containerId} className={"display-" + showScanningView}></div>
+          {scanningDone && (
+            <ImageViewer
+              DWObject={DWObject}
+              context={props.context}
+              onScanningDone={onScanningDone}
+            ></ImageViewer>
+          )}
+        </>
       )}
-   </>
-   } 
-    
     </FluentProvider>
   );
 };

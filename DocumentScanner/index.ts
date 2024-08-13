@@ -1,12 +1,13 @@
 import * as React from "react";
 import {IInputs, IOutputs} from "./generated/ManifestTypes";
-import { createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 import { App } from "./App/components/App";
  
 export class DocumentScanner implements ComponentFramework.StandardControl<IInputs, IOutputs> {
     private _container: HTMLDivElement;
     private _context: ComponentFramework.Context<IInputs>;
     private _notifyOutputChanged:() => void;
+    root: Root;
     /**
      * Empty constructor.
      */
@@ -29,6 +30,7 @@ export class DocumentScanner implements ComponentFramework.StandardControl<IInpu
         this._container = container;
         this._context = context;
         this._notifyOutputChanged=notifyOutputChanged;
+      //  this.root=createRoot(this._container);
     }
 
 
@@ -39,7 +41,8 @@ export class DocumentScanner implements ComponentFramework.StandardControl<IInpu
     public updateView(context: ComponentFramework.Context<IInputs>): void
     {
         // Add code to update control view
-        createRoot(this._container).render(
+        this.root=createRoot(this._container);
+        this.root.render(
             React.createElement(App, {
               appId: "Neudesic-ScannerId",
               context: context,

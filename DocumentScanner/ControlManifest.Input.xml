@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="neu" constructor="DocumentScanner" version="1.2.0" display-name-key="DocumentScanner" description-key="DocumentScanner description" control-type="standard" >
+  <control namespace="neu" constructor="DocumentScanner" version="2.0.1" display-name-key="DocumentScanner" description-key="DocumentScanner description" control-type="standard" >
    
     <external-service-usage enabled="false">
    
@@ -8,6 +8,7 @@
      <property name="scaning" display-name-key="scaning Field " description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="bound" required="true" />
     <property name="primaryField" display-name-key="primaryField " description-key="primaryField" of-type="SingleLine.Text" usage="bound" />
     <property name="isDocumentLoadFromLocal" display-name-key="Is Document Load From Local" description-key="Indicates whether Document can be Loaded From Local" of-type="TwoOptions" usage="input" required="true" />
+    <property name="maxSizeToOptimiseInKb" display-name-key="MaxSizeToOptimiseInKb" description-key="MaxSizeToOptimiseInKb indicated how many max size for each image" of-type="Decimal" usage="input" />
  
     <resources>
       <code path="index.ts" order="1"/> 
